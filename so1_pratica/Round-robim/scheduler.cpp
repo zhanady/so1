@@ -147,6 +147,7 @@ bool comp (Processo a, Processo b){
     return a.chegada < b.chegada;
 }
 
+
 int main(int argc, char* argv[]) {
     if (argc != 3) {
         cerr << "Uso correto: " << argv[0] << " caso_1.txt saida.txt\n";
@@ -232,6 +233,47 @@ int main(int argc, char* argv[]) {
     int quantum = 2;
 
     queue<int> filaProntos;
+    vector<bool> entrouNaFila(n, false);
+
+    while(processosConcluidos < n){
+        for(int i = 0; i < n; i++){
+            if(processos[i].chegada <= tempoAtual){
+                filaProntos.push(i);
+            }
+        }
+        if (filaProntos.size() <= 0){
+            int chegada = 123121231;
+            int indiceProx = -1;
+            for(int i = 0; i < n; i++){
+                if(processos[i].chegada < chegada){
+                    chegada = processos[i].chegada;
+                    indiceProx = i;
+                }
+            } 
+            gantt.push_back(to_string(tempoAtual) + "-" + to_string(processos[indiceProx].chegada) + " IDLE");
+            filaProntos.push(indiceProx);  
+        }
+        else{
+            int processo = filaProntos.front();
+            filaProntos.pop();
+            int tempo_execucao = min(quantum, processos[processo].tempo_restante);
+            gantt.push_back(to_string(tempoAtual) + "-" + to_string(tempoAtual + tempo_execucao) + " " + processos[processo].id);
+            tempoAtual += processos[processo].cpu;
+            processos[processo].tempo_restante -= tempo_execucao;
+            for(int i = 0; i < n; i++){
+                if(processos[i].chegada <= tempoAtual){
+                    filaProntos.push(i);
+                }
+            }
+            if(processos[processo].tempo_restante > 0){
+                filaProntos.push(processo);
+            }
+            else{
+                processos[processo].termino = tempoAtual;
+                processosConcluidos++;
+            }
+        }
+    }
     
 
     /*
@@ -245,6 +287,11 @@ int main(int argc, char* argv[]) {
         Nota: Diferente do FCFS, no Round-Robin preemptivo, os tempos de 
         ESPERA e RESPOSTA geralmente terão valores diferentes!
     */
+   for(int i = 0; i < processos.size(); i++){
+        processos[i].retorno = processos[i].termino - processos[i].chegada; 
+        processos[i].espera = processos[i].retorno - processos[i].cpu; 
+        processos[i].resposta = processos[i].primeira_execucao - processos[i].chegada; 
+    } 
 
     /*
         TODO 4:
@@ -254,7 +301,7 @@ int main(int argc, char* argv[]) {
         mediaEspera
         mediaResposta
     */
-
+    
     /*
         TODO 5:
         Chamar a função escreverSaida com os resultados finais.
@@ -264,7 +311,15 @@ int main(int argc, char* argv[]) {
     double mediaRetorno = 0.0;
     double mediaEspera = 0.0;
     double mediaResposta = 0.0;
-
+    for(int i = 0; i < processos.size(); i++){
+        mediaRetorno += processos[i].retorno; 
+        mediaEspera += processos[i].espera; 
+        mediaResposta += processos[i].resposta; 
+    }
+    
+    mediaRetorno = mediaRetorno / processos.size();
+    mediaEspera = mediaEspera / processos.size();
+    mediaResposta = mediaResposta / processos.size();
     /*
         TODO 5:
         Chamar a funcao escreverSaida com os resultados finais.

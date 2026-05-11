@@ -16,10 +16,10 @@ struct Processo
 
     int termino = -1;
     int primeira_execucao = -1;
-    int inicio = -1;
     int retorno = 0;
     int espera = 0;
     int resposta = 0;
+    int inicio = 0;
 };
 
 bool ignorarLinha(const string &linha)
@@ -166,8 +166,15 @@ void escreverSaida(
 bool comp(Processo a, Processo b)
 {
 
+    return a.chegada < b.chegada;
+}
+
+bool comp_cpu(Processo a, Processo b)
+{
+
     return a.cpu < b.cpu;
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -185,13 +192,13 @@ int main(int argc, char *argv[])
 
     lerArquivoEntrada(arquivoEntrada, processos);
 
-    /*
-    TODO 1:
-    Ordenar os processos por tempo de CHEGADA.
-    Isso organiza a linha do tempo e facilita encontrar o proximo
-    processo em caso de CPU ociosa.
-    Em caso de empate na chegada, preserve a ordem original.
-    */
+            /*
+        TODO 1:
+        Ordenar os processos por tempo de CHEGADA.
+        Isso organiza a linha do tempo e facilita encontrar o proximo
+        processo em caso de CPU ociosa.
+        Em caso de empate na chegada, preserve a ordem original.
+        */
     sort(processos.begin(), processos.end(), comp);
 
     /*
@@ -209,44 +216,55 @@ int main(int argc, char *argv[])
     - Em caso de empate na CPU, o criterio de desempate ja estara
     resolvido se voce iterar sequencialmente (pois a lista ja
     esta ordenada por chegada do TODO 1).
-    */
+*/
     
-    int tempoAtual =0;
+    int tempoAtual = 0;
     int processosConcluidos = 0;
-    int qtdProcessos = processos.size();
-    bool achou = false;
+    int tamanho = processos.size();
+    vector<Processo> elegiveis;
+    int i = 0;
+    while (processosConcluidos < tamanho){
+        int indiceMelhor = -1;
+        int menorCpu = 100000000;
 
-    while (processosConcluidos < qtdProcessos){
-        for(int i = 0; i < qtdProcessos; i++){
-            if (processos[i].chegada <= tempoAtual){
-                if (processos[i].termino == -1){
-                    achou = true;
-                    processos[i].primeira_execucao = tempoAtual;
-                    processos[i].inicio = tempoAtual;
-                    processos[i].termino = tempoAtual + processos[i].cpu;
-                    gantt.push_back(to_string(tempoAtual) + "-" + to_string(processos[i].termino) + processos[i].id);
-                    tempoAtual = processos[i].termino;
-                    processosConcluidos += 1;
-                } 
-            }
-            if (achou == false){
-                int z = i;
-                for(z; z < processos.size(); z++)
-                {
-                    if (processos[z].chegada <= tempoAtual){
-                        if (processos[z].termino == -1){
-                            gantt.push_back(to_string(tempoAtual) + "-" + to_string(processos[z].chegada));
-                            tempoAtual = processos[z].chegada;
-                        }
-                    }   
+        for(int i = 0 ; i < processos.size(); i++){
+            if(processos[i].chegada <= tempoAtual){
+                if(processos[i].termino == -1){
+                    if(processos[i].cpu < menorCpu){
+                        menorCpu = processos[i].cpu;
+                        indiceMelhor = i;
+                    }
                 }
+            }
+        }
+        if (indiceMelhor != -1){
+            Processo &p = processos[indiceMelhor];
+            p.primeira_execucao = tempoAtual;
+            p.inicio = tempoAtual;
+            p.termino = tempoAtual + p.cpu;
+            gantt.push_back(to_string(p.inicio) + "-" + to_string(p.termino) + " " + p.id);
+            tempoAtual = p.termino;
+            processosConcluidos++;
+        }
+        else{
+            int proximaChegada = -1;
+            for(int i = 0; i  < tamanho; i++){
+                if(processos[i].termino == -1){
+                    if(proximaChegada == -1 || processos[i].chegada < proximaChegada){
+                        proximaChegada = processos[i].chegada;
+                    }
+                }
+            }
+            if(proximaChegada != -1){
+                gantt.push_back(to_string(tempoAtual) + "-" + to_string(proximaChegada) + " " + "IDLE");
+                tempoAtual = proximaChegada;
             }
         }
     }
 
 
 
-    /*
+/*
     2. Se ENCONTROU um processo:
     - Atualizar primeira_execucao (se ainda for -1)
     - Calcular inicio = tempoAtual
@@ -274,15 +292,13 @@ int main(int argc, char *argv[])
     Nota: No SJF nao-preemptivo, assim como no FCFS, espera e resposta
     serao iguais, mas calcule ambas para manter a estrutura.
     */
-
-
-
-    for(int i = 0; i < processos.size(); i++)
-    {
+    for(int i = 0 ; i < processos.size(); i++){
         processos[i].retorno = processos[i].termino - processos[i].chegada;
         processos[i].espera = processos[i].retorno - processos[i].cpu;
         processos[i].resposta = processos[i].primeira_execucao - processos[i].chegada;
+        
     }
+
 
     /*
     TODO 4:
@@ -296,16 +312,16 @@ int main(int argc, char *argv[])
     double mediaEspera = 0.0;
     double mediaResposta = 0.0;
     
-    for(int i = 0; i < processos.size(); i++)
-    {
+    for(int i = 0 ; i < processos.size(); i++){
         mediaRetorno += processos[i].retorno;
-        mediaEspera += processos[i].espera; 
+        mediaEspera += processos[i].espera;
         mediaResposta += processos[i].resposta;
     }
 
     mediaRetorno = mediaRetorno / processos.size();
     mediaEspera = mediaEspera / processos.size();
     mediaResposta = mediaResposta / processos.size();
+
     /*
     TODO 5:
     Chamar a funcao escreverSaida com os resultados finais.
