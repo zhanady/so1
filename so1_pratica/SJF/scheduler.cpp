@@ -16,6 +16,7 @@ struct Processo
 
     int termino = -1;
     int primeira_execucao = -1;
+    int inicio = -1;
     int retorno = 0;
     int espera = 0;
     int resposta = 0;
@@ -165,7 +166,7 @@ void escreverSaida(
 bool comp(Processo a, Processo b)
 {
 
-    return a.chegada < b.chegada;
+    return a.cpu < b.cpu;
 }
 
 int main(int argc, char *argv[])
@@ -184,13 +185,13 @@ int main(int argc, char *argv[])
 
     lerArquivoEntrada(arquivoEntrada, processos);
 
-            /*
-        TODO 1:
-        Ordenar os processos por tempo de CHEGADA.
-        Isso organiza a linha do tempo e facilita encontrar o proximo
-        processo em caso de CPU ociosa.
-        Em caso de empate na chegada, preserve a ordem original.
-        */
+    /*
+    TODO 1:
+    Ordenar os processos por tempo de CHEGADA.
+    Isso organiza a linha do tempo e facilita encontrar o proximo
+    processo em caso de CPU ociosa.
+    Em caso de empate na chegada, preserve a ordem original.
+    */
     sort(processos.begin(), processos.end(), comp);
 
     /*
@@ -208,15 +209,44 @@ int main(int argc, char *argv[])
     - Em caso de empate na CPU, o criterio de desempate ja estara
     resolvido se voce iterar sequencialmente (pois a lista ja
     esta ordenada por chegada do TODO 1).
-*/
+    */
     
     int tempoAtual =0;
-    int processosDone =0;
-    int processos = 0;
+    int processosConcluidos = 0;
+    int qtdProcessos = processos.size();
+    bool achou = false;
+
+    while (processosConcluidos < qtdProcessos){
+        for(int i = 0; i < qtdProcessos; i++){
+            if (processos[i].chegada <= tempoAtual){
+                if (processos[i].termino == -1){
+                    achou = true;
+                    processos[i].primeira_execucao = tempoAtual;
+                    processos[i].inicio = tempoAtual;
+                    processos[i].termino = tempoAtual + processos[i].cpu;
+                    gantt.push_back(to_string(tempoAtual) + "-" + to_string(processos[i].termino) + processos[i].id);
+                    tempoAtual = processos[i].termino;
+                    processosConcluidos += 1;
+                } 
+            }
+            if (achou == false){
+                int z = i;
+                for(z; z < processos.size(); z++)
+                {
+                    if (processos[z].chegada <= tempoAtual){
+                        if (processos[z].termino == -1){
+                            gantt.push_back(to_string(tempoAtual) + "-" + to_string(processos[z].chegada));
+                            tempoAtual = processos[z].chegada;
+                        }
+                    }   
+                }
+            }
+        }
+    }
 
 
 
-/*
+    /*
     2. Se ENCONTROU um processo:
     - Atualizar primeira_execucao (se ainda for -1)
     - Calcular inicio = tempoAtual
@@ -246,6 +276,14 @@ int main(int argc, char *argv[])
     */
 
 
+
+    for(int i = 0; i < processos.size(); i++)
+    {
+        processos[i].retorno = processos[i].termino - processos[i].chegada;
+        processos[i].espera = processos[i].retorno - processos[i].cpu;
+        processos[i].resposta = processos[i].primeira_execucao - processos[i].chegada;
+    }
+
     /*
     TODO 4:
     Calcular as medias:
@@ -257,6 +295,17 @@ int main(int argc, char *argv[])
     double mediaRetorno = 0.0;
     double mediaEspera = 0.0;
     double mediaResposta = 0.0;
+    
+    for(int i = 0; i < processos.size(); i++)
+    {
+        mediaRetorno += processos[i].retorno;
+        mediaEspera += processos[i].espera; 
+        mediaResposta += processos[i].resposta;
+    }
+
+    mediaRetorno = mediaRetorno / processos.size();
+    mediaEspera = mediaEspera / processos.size();
+    mediaResposta = mediaResposta / processos.size();
     /*
     TODO 5:
     Chamar a funcao escreverSaida com os resultados finais.

@@ -15,6 +15,7 @@ struct Processo {
 
     int termino = -1;
     int primeira_execucao = -1;
+    int inicio = -1;
     int retorno = 0;
     int espera = 0;
     int resposta = 0;
@@ -164,7 +165,11 @@ int main(int argc, char* argv[]) {
         Ordenar os processos por tempo de chegada.
         Em caso de empate, preservar a ordem original do arquivo.
     */
-
+    sort(processos.begin(), processos.end(), comp);
+    for(int i = 0; i < processos.size(); i++)
+    {
+        printf("%d \n", processos[i].chegada);
+    }
     /*
         TODO 2:
         Implementar o algoritmo FCFS.
@@ -184,8 +189,19 @@ int main(int argc, char* argv[]) {
             - registrar no Gantt: "inicio-termino ID"
             - atualizar tempoAtual
     */
-        
-
+    int tempoAtual = 0;
+    for(int i = 0; i < processos.size(); i++)
+    {
+        if (tempoAtual < processos[i].chegada){
+            gantt.push_back(to_string(tempoAtual) + "-" + to_string(processos[i].termino) + " IDLE");
+            tempoAtual = processos[i].chegada;
+        }
+        processos[i].primeira_execucao = tempoAtual;
+        processos[i].inicio = tempoAtual;
+        processos[i].termino = tempoAtual + processos[i].cpu;
+        gantt.push_back(to_string(processos[i].inicio) + "-" + to_string(processos[i].termino) + " " + processos[i].id);
+        tempoAtual = processos[i].termino;
+    }
     /*
         TODO 3:
         Calcular as metricas de cada processo:
@@ -194,7 +210,12 @@ int main(int argc, char* argv[]) {
         espera = retorno - cpu
         resposta = primeira_execucao - chegada
     */
-
+    for(int i = 0; i < processos.size(); i++)
+    {
+        processos[i].retorno = processos[i].termino - processos[i].chegada;
+        processos[i].espera = processos[i].retorno - processos[i].cpu;
+        processos[i].resposta = processos[i].primeira_execucao - processos[i].chegada; 
+    }
     /*
         TODO 4:
         Calcular as medias:
@@ -209,7 +230,16 @@ int main(int argc, char* argv[]) {
     double mediaEspera = 0.0;
     double mediaResposta = 0.0;
 
+    for(int i = 0; i < processos.size(); i++)
+    {
+        mediaRetorno += processos[i].retorno;
+        mediaEspera += processos[i].espera;
+        mediaResposta += processos[i].resposta; 
+    }
 
+    mediaRetorno = mediaRetorno / processos.size();
+    mediaEspera = mediaEspera / processos.size();
+    mediaResposta = mediaResposta / processos.size();
     /*
         TODO 5:
         Chamar a funcao escreverSaida com os resultados finais.
