@@ -1,0 +1,6 @@
+n=4
+# id chegada cpu prioridade
+P1 0 3 2
+P2 5 4 1
+P3 6 2 4
+P4 7 1 3
