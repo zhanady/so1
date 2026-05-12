@@ -165,7 +165,7 @@ int main(int argc, char* argv[]) {
         Ordenar os processos por tempo de chegada.
         Em caso de empate, preservar a ordem original do arquivo.
     */
-    sort(processos.begin(), processos.end(), comp);
+    stable_sort(processos.begin(), processos.end(), comp);
     for(int i = 0; i < processos.size(); i++)
     {
         printf("%d \n", processos[i].chegada);

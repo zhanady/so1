@@ -236,44 +236,74 @@ int main(int argc, char* argv[]) {
     vector<bool> entrouNaFila(n, false);
 
     while(processosConcluidos < n){
-        for(int i = 0; i < n; i++){
-            if(processos[i].chegada <= tempoAtual){
+        int tempoAtual = 0;
+    int processosConcluidos = 0;
+    int n = processos.size();
+    int quantum = 2;
+
+    queue<int> filaProntos;
+    vector<bool> entrouNaFila(n, false);
+
+    while (processosConcluidos < n) {
+        // 1. Verificar quem chegou até o tempo atual e colocar na fila
+        for (int i = 0; i < n; i++) {
+            if (processos[i].chegada <= tempoAtual && !entrouNaFila[i] && processos[i].termino == -1) {
                 filaProntos.push(i);
+                entrouNaFila[i] = true;
             }
         }
-        if (filaProntos.size() <= 0){
-            int chegada = 123121231;
-            int indiceProx = -1;
-            for(int i = 0; i < n; i++){
-                if(processos[i].chegada < chegada){
-                    chegada = processos[i].chegada;
-                    indiceProx = i;
+
+        // 2. Se a fila estiver vazia, a CPU fica ociosa (IDLE)
+        if (filaProntos.empty()) {
+            int proxChegada = -1;
+            for (int i = 0; i < n; i++) {
+                if (processos[i].termino == -1) {
+                    if (proxChegada == -1 || processos[i].chegada < proxChegada) {
+                        proxChegada = processos[i].chegada;
+                    }
                 }
-            } 
-            gantt.push_back(to_string(tempoAtual) + "-" + to_string(processos[indiceProx].chegada) + " IDLE");
-            filaProntos.push(indiceProx);  
+            }
+
+            if (proxChegada != -1) {
+                gantt.push_back(to_string(tempoAtual) + "-" + to_string(proxChegada) + " IDLE");
+                tempoAtual = proxChegada;
+            }
+            continue; // Volta para o início para adicionar o processo que acabou de chegar
         }
-        else{
-            int processo = filaProntos.front();
-            filaProntos.pop();
-            int tempo_execucao = min(quantum, processos[processo].tempo_restante);
-            gantt.push_back(to_string(tempoAtual) + "-" + to_string(tempoAtual + tempo_execucao) + " " + processos[processo].id);
-            tempoAtual += processos[processo].cpu;
-            processos[processo].tempo_restante -= tempo_execucao;
-            for(int i = 0; i < n; i++){
-                if(processos[i].chegada <= tempoAtual){
-                    filaProntos.push(i);
-                }
+
+        // 3. Executar o processo da frente da fila
+        int idx = filaProntos.front();
+        filaProntos.pop();
+
+        // Registrar o tempo de Resposta (apenas na primeira vez que toca na CPU)
+        if (processos[idx].primeira_execucao == -1) {
+            processos[idx].primeira_execucao = tempoAtual;
+        }
+
+        int tempo_execucao = min(quantum, processos[idx].tempo_restante);
+        
+        gantt.push_back(to_string(tempoAtual) + "-" + to_string(tempoAtual + tempo_execucao) + " " + processos[idx].id);
+        
+        tempoAtual += tempo_execucao; 
+        processos[idx].tempo_restante -= tempo_execucao;
+
+        // 4. Antes de devolver o atual para a fila, verificar se alguém chegou NESTE intervalo
+        for (int i = 0; i < n; i++) {
+            if (processos[i].chegada <= tempoAtual && !entrouNaFila[i] && processos[i].termino == -1) {
+                filaProntos.push(i);
+                entrouNaFila[i] = true;
             }
-            if(processos[processo].tempo_restante > 0){
-                filaProntos.push(processo);
-            }
-            else{
-                processos[processo].termino = tempoAtual;
-                processosConcluidos++;
-            }
+        }
+
+        // 5. Se o processo ainda tem trabalho, volta para o FIM da fila
+        if (processos[idx].tempo_restante > 0) {
+            filaProntos.push(idx);
+        } else {
+            processos[idx].termino = tempoAtual;
+            processosConcluidos++;
         }
     }
+    
     
 
     /*
