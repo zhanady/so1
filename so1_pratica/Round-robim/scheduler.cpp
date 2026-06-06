@@ -235,8 +235,8 @@ int main(int argc, char* argv[]) {
     queue<int> filaProntos;
     vector<bool> entrouNaFila(n, false);
 
-    while(processosConcluidos < n){
-        int tempoAtual = 0;
+    
+    int tempoAtual = 0;
     int processosConcluidos = 0;
     int n = processos.size();
     int quantum = 2;
