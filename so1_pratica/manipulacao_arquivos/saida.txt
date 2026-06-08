@@ -1,0 +1,2 @@
+ID: 2 | Nome: joao | Sexo: m | Salario: 5000.00
+ID: 1 | Nome: zainab | Sexo: f | Salario: 2400.00
